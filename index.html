@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>合田商店｜Canvas組織図（説明付き・均等余白）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Noto+Sans+JP:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page-bg: #ffffff;
+    --text: #2b2f3a;
+  }
+  html,body{
+    height:100%; margin:0; color:var(--text); background:var(--page-bg);
+    font-family:"Noto Sans JP","Inter",system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  }
+  .wrap{
+    width:min(92vw,1400px);
+    aspect-ratio:16/9;
+    margin:3.5vh auto 0;
+    position:relative; border-radius:20px; overflow:hidden;
+    background:
+      radial-gradient(1400px 900px at 80% 0%, rgba(198,184,255,0.15) 0%, transparent 55%),
+      radial-gradient(1200px 800px at 15% 85%, rgba(178,245,234,0.15) 0%, transparent 55%),
+      radial-gradient(1000px 700px at 30% 30%, rgba(255,214,239,0.12) 0%, transparent 60%),
+      var(--page-bg);
+    box-shadow:0 16px 40px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  canvas{ width:100%; height:100%; display:block; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="chart" aria-label="合田商店の組織図（説明付き）"></canvas>
+  </div>
+
+<script>
+(async function(){
+  try{ await document.fonts.ready; }catch(e){}
+
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+
+  const labels = [
+    '観光文化部門',
+    '資産運用部門',
+    '思想教養部門',
+    '宣伝広報部門',
+    '先端技術研究室'
+  ];
+
+  const descriptions = [
+    '地域の魅力や四季のイベントを楽しむ活動を企画',
+    '株や債券などで資産を増やす投資を行う',
+    '政治・経済・社会・哲学などを議論し、知識を深める（にちぎんカフェ）',
+    '活動内容をSNSなどで発信し、外部に広める',
+    '新しいシステムや技術を研究・開発し、業務に活かす'
+  ];
+
+  const deptGrads = [
+    ['#DFF6A6','#B8E986'],
+    ['#FFE7C2','#FFC371'],
+    ['#D1EEFF','#A7E3FF'],
+    ['#FFD6E8','#FFC0DA'],
+    ['#E9E0FF','#CDB5FF']
+  ];
+
+  const rootGrad = ['#000000','#000000'];
+
+  function fitCanvas(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function roundRectPath(x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.lineTo(x+w-rr,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+    ctx.lineTo(x+w,y+h-rr);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+    ctx.lineTo(x+rr,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+    ctx.lineTo(x,y+rr);
+    ctx.quadraticCurveTo(x,y,x+rr,y);
+    ctx.closePath();
+  }
+
+  function gradientX(x,y,w,colors){
+    const g = ctx.createLinearGradient(x,y,x+w,y);
+    const step = 1/(colors.length-1);
+    colors.forEach((c,i)=> g.addColorStop(i*step, c));
+    return g;
+  }
+
+  function wrapTextMultiline(text, x, y, maxWidth, lineHeight, maxLines){
+    const chars = Array.from(text);
+    let line = '';
+    let linesDrawn = 0;
+    for (let i = 0; i < chars.length; i++) {
+      const test = line + chars[i];
+      if (ctx.measureText(test).width > maxWidth && line !== '') {
+        ctx.fillText(line, x, y);
+        y += lineHeight;
+        linesDrawn++;
+        if (linesDrawn >= maxLines - 1) {
+          // 残りは省略記号
+          let rest = '';
+          for (let j = i; j < chars.length; j++) rest += chars[j];
+          let out = rest;
+          while (ctx.measureText(out + '…').width > maxWidth && out.length > 0) {
+            out = out.slice(0, -1);
+          }
+          ctx.fillText(out + (out.length < rest.length ? '…' : ''), x, y);
+          return;
+        }
+        line = chars[i];
+      } else {
+        line = test;
+      }
+    }
+    ctx.fillText(line, x, y);
+  }
+
+  function drawNode(x,y,w,h,title,desc,colors,isRoot=false){
+    // 背景
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 16;
+    roundRectPath(x,y,w,h,14);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fill();
+    ctx.restore();
+
+    // 枠
+    ctx.save();
+    roundRectPath(x+0.5,y+0.5,w-1,h-1,13.5);
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = gradientX(x,y,w,colors);
+    ctx.stroke();
+    ctx.restore();
+
+    // タイトル
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = gradientX(x,y,w,colors);
+    if(isRoot){
+      ctx.font = '800 22px "Noto Sans JP","Inter",sans-serif';
+      ctx.fillText(title, x + w/2, y + 22);
+    } else {
+      ctx.font = '800 16px "Noto Sans JP","Inter",sans-serif';
+      ctx.fillText(title, x + w/2, y + 14);
+      // 説明（グレー、複数行）
+      ctx.font = '500 13px "Noto Sans JP","Inter",sans-serif';
+      ctx.fillStyle = '#333333';
+      wrapTextMultiline(desc, x + w/2, y + 38, w - 28, 18, 3);
+    }
+    ctx.restore();
+  }
+
+  function layout(){
+    const rect = canvas.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+
+    const rootW = Math.max(300, W*0.24);
+    const rootH = 80;
+    const rootX = W/2, rootY = H*0.09;
+
+    const barY = H*0.36;
+
+    const N = labels.length;
+    let childW = Math.max(260, W*0.17); // 説明文分、幅を少し広げる
+    const childH = 120;                 // 高さも拡張
+
+    const minGap = Math.max(44, W*0.03);
+    const edge = Math.max(64, W*0.06);
+
+    let innerGap = (W - 2*edge - N*childW) / (N - 1);
+    if (innerGap < minGap) {
+      childW = Math.max(200, (W - 2*edge - (N - 1)*minGap) / N);
+      innerGap = (W - 2*edge - N*childW) / (N - 1);
+    }
+
+    const px = Array.from({length:N}, (_,i)=> edge + i*(childW + innerGap) + childW/2);
+
+    const childY = H*0.64;
+
+    return {
+      W,H,
+      rootBox:{ x:rootX-rootW/2, y:rootY-rootH/2, w:rootW, h:rootH },
+      barY,
+      branchX:px,
+      childBoxes: px.map(x => ({ x:x-childW/2, y:childY-childH/2, w:childW, h:childH })),
+      childTop: childY - childH/2 - 10
+    };
+  }
+
+  function drawWires(L){
+    const cx = L.rootBox.x + L.rootBox.w/2;
+    const y0 = L.rootBox.y + L.rootBox.h + 4;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#000000';
+
+    ctx.beginPath();
+    ctx.moveTo(cx, y0);
+    ctx.bezierCurveTo(cx, y0+80, cx, y0+130, cx, L.barY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(L.branchX[0], L.barY);
+    ctx.lineTo(L.branchX[L.branchX.length-1], L.barY);
+    ctx.stroke();
+
+    L.branchX.forEach((x)=>{
+      ctx.beginPath();
+      ctx.moveTo(x, L.barY);
+      ctx.lineTo(x, L.childTop);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function draw(){
+    fitCanvas();
+    const rect = canvas.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+    ctx.clearRect(0,0,W,H);
+
+    const L = layout();
+    drawWires(L);
+    drawNode(L.rootBox.x, L.rootBox.y, L.rootBox.w, L.rootBox.h, '合田商店', '', rootGrad, true);
+    L.childBoxes.forEach((b,i)=>{
+      drawNode(b.x, b.y, b.w, b.h, labels[i], descriptions[i], deptGrads[i], false);
+    });
+  }
+
+  window.addEventListener('resize', draw);
+  draw();
+})();
+</script>
+</body>
+</html>
