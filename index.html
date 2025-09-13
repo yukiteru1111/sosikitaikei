@@ -48,7 +48,8 @@
     '資産運用部門',
     '思想教養部門',
     '宣伝広報部門',
-    '先端技術研究室'
+    '先端技術研究室',
+    '合田史料編纂所'
   ];
 
   const descriptions = [
@@ -56,7 +57,8 @@
     '株や債券などで資産を増やす投資を行う',
     '政治・経済・社会・哲学などを議論し、知識を深める（にちぎんカフェ）',
     '活動内容をSNSなどで発信し、外部に広める',
-    '新しいシステムや技術を研究・開発し、業務に活かす'
+    '新しいシステムや技術を研究・開発し、業務に活かす',
+    '歴史や資料を収集・整理し、知識として編纂する'
   ];
 
   const deptGrads = [
@@ -64,7 +66,8 @@
     ['#FFE7C2','#FFC371'],
     ['#D1EEFF','#A7E3FF'],
     ['#FFD6E8','#FFC0DA'],
-    ['#E9E0FF','#CDB5FF']
+    ['#E9E0FF','#CDB5FF'],
+    ['#E8E8E8','#B0B0B0'] // グレー系の淡いグラデーション
   ];
 
   const rootGrad = ['#000000','#000000'];
@@ -110,7 +113,6 @@
         y += lineHeight;
         linesDrawn++;
         if (linesDrawn >= maxLines - 1) {
-          // 残りは省略記号
           let rest = '';
           for (let j = i; j < chars.length; j++) rest += chars[j];
           let out = rest;
@@ -129,7 +131,6 @@
   }
 
   function drawNode(x,y,w,h,title,desc,colors,isRoot=false){
-    // 背景
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.06)';
     ctx.shadowBlur = 16;
@@ -138,7 +139,6 @@
     ctx.fill();
     ctx.restore();
 
-    // 枠
     ctx.save();
     roundRectPath(x+0.5,y+0.5,w-1,h-1,13.5);
     ctx.lineWidth = 1.2;
@@ -146,7 +146,6 @@
     ctx.stroke();
     ctx.restore();
 
-    // タイトル
     ctx.save();
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
@@ -157,7 +156,6 @@
     } else {
       ctx.font = '800 16px "Noto Sans JP","Inter",sans-serif';
       ctx.fillText(title, x + w/2, y + 14);
-      // 説明（グレー、複数行）
       ctx.font = '500 13px "Noto Sans JP","Inter",sans-serif';
       ctx.fillStyle = '#333333';
       wrapTextMultiline(desc, x + w/2, y + 38, w - 28, 18, 3);
@@ -176,11 +174,11 @@
     const barY = H*0.36;
 
     const N = labels.length;
-    let childW = Math.max(260, W*0.17); // 説明文分、幅を少し広げる
-    const childH = 120;                 // 高さも拡張
+    let childW = Math.max(260, W*0.15);
+    const childH = 120;
 
     const minGap = Math.max(44, W*0.03);
-    const edge = Math.max(64, W*0.06);
+    const edge = Math.max(64, W*0.04);
 
     let innerGap = (W - 2*edge - N*childW) / (N - 1);
     if (innerGap < minGap) {
@@ -249,3 +247,4 @@
 </script>
 </body>
 </html>
+
